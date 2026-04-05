@@ -3,4 +3,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Additional color variables for dashboard */
+  --color-background-primary: #f9fafb;
+  --color-background-secondary: #f3f4f6;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+  --color-border-secondary: #e5e7eb;
+  --color-border-tertiary: #f3f4f6;
 }

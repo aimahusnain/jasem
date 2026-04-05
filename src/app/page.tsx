@@ -146,6 +146,8 @@ interface InputSheetProps {
   rows: Array<{ kpi: string; category: string; unit: string }>;
   week: number;
   setWeek: (week: number) => void;
+  values: Record<number, string>;
+  setValues: (values: Record<number, string>) => void;
 }
 
 // ── SHARED COMPONENTS ─────────────────────────────────────────────────
@@ -176,9 +178,12 @@ function ChartCard({ title, children }: ChartCardProps) {
 }
 
 // ── INPUT SHEET ───────────────────────────────────────────────────────
-function InputSheet({ rows, week, setWeek }: InputSheetProps) {
-  const [vals, setVals] = useState(() => rows.map(() => ""));
+function InputSheet({ rows, week, setWeek, values, setValues }: InputSheetProps) {
   const categories = [...new Set(rows.map((r: { category: string }) => r.category))];
+
+  const handleChange = (index: number, value: string) => {
+    setValues({ ...values, [index]: value });
+  };
 
   return (
     <div>
@@ -211,8 +216,8 @@ function InputSheet({ rows, week, setWeek }: InputSheetProps) {
                   <td style={{ padding: "7px 12px", color: "var(--color-text-primary)" }}>{row.kpi}</td>
                   <td style={{ padding: "7px 12px", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 12 }}>{row.unit}</td>
                   <td style={{ padding: "7px 12px", background: "#EAF3DE" }}>
-                    <input placeholder="Enter value" value={vals[i]}
-                      onChange={e => { const d = [...vals]; d[i] = e.target.value; setVals(d); }}
+                    <input placeholder="Enter value" value={values[i] || ""}
+                      onChange={e => handleChange(i, e.target.value)}
                       style={{ width: "100%", textAlign: "center", border: "none", background: "transparent", fontSize: 13, color: "var(--color-text-primary)", outline: "none" }} />
                   </td>
                 </tr>
@@ -229,6 +234,8 @@ function InputSheet({ rows, week, setWeek }: InputSheetProps) {
 export default function App() {
   const [tab, setTab] = useState(0);
   const [week, setWeek] = useState(5);
+  const [finValues, setFinValues] = useState<Record<number, string>>({});
+  const [gameValues, setGameValues] = useState<Record<number, string>>({});
 
   return (
     <div style={{ fontFamily: "var(--font-sans)", color: "var(--color-text-primary)", paddingBottom: "2rem" }}>
@@ -254,24 +261,33 @@ export default function App() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <div style={{ fontSize: 18, fontWeight: 500 }}>Financial dashboard</div>
-              <span style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, background: "var(--color-background-secondary)", border: "0.5px solid var(--color-border-tertiary)", color: "var(--color-text-secondary)" }}>Week 5</span>
+              <span style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, background: "var(--color-background-secondary)", border: "0.5px solid var(--color-border-tertiary)", color: "var(--color-text-secondary)" }}>Week {week}</span>
             </div>
             <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 16 }}>Actuals only · Shared with investors</div>
 
             <SectionLabel text="Sales" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 8 }}>
-              {finKpis.slice(0, 3).map((k, i) => <KpiCard key={i} {...k} />)}
+              {finInputRows.slice(0, 4).map((row, i) => (
+                <KpiCard key={i} label={row.kpi} value={finValues[i] || "-"} />
+              ))}
             </div>
 
             <SectionLabel text="B2B" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 16 }}>
-              {finKpis.slice(3).map((k, i) => <KpiCard key={i} {...k} />)}
+              {finInputRows.slice(4, 9).map((row, i) => (
+                <KpiCard key={i + 4} label={row.kpi} value={finValues[i + 4] || "-"} />
+              ))}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
               <ChartCard title="B2B pipeline funnel">
                 <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={b2bFunnel} layout="vertical" barSize={16}>
+                  <BarChart data={[
+                    { stage: "Meetings", value: Number(finValues[5]) || 0 },
+                    { stage: "Proposals", value: Number(finValues[6]) || 0 },
+                    { stage: "Pipeline", value: Number(finValues[8]) || 0 },
+                    { stage: "Signed", value: Number(finValues[7]) || 0 },
+                  ]} layout="vertical" barSize={16}>
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="stage" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={65} />
                     <Tooltip />
@@ -281,7 +297,10 @@ export default function App() {
               </ChartCard>
               <ChartCard title="Units sold by product">
                 <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={[{ name: "Deera", v: 1240 }, { name: "Mushakhat", v: 870 }]} barSize={40}>
+                  <BarChart data={[
+                    { name: "Deera", v: Number(finValues[0]) || 0 },
+                    { name: "Mushakhat", v: Number(finValues[1]) || 0 }
+                  ]} barSize={40}>
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis hide />
                     <Tooltip />
@@ -293,7 +312,9 @@ export default function App() {
 
             <SectionLabel text="Content" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
-              {contentKpis.map((k, i) => <KpiCard key={i} {...k} />)}
+              {finInputRows.slice(9).map((row, i) => (
+                <KpiCard key={i + 9} label={row.kpi} value={finValues[i + 9] || "-"} />
+              ))}
             </div>
           </div>
         )}
@@ -303,19 +324,25 @@ export default function App() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <div style={{ fontSize: 18, fontWeight: 500 }}>Games dashboard</div>
-              <span style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, background: "var(--color-background-secondary)", border: "0.5px solid var(--color-border-tertiary)", color: "var(--color-text-secondary)" }}>Week 5</span>
+              <span style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, background: "var(--color-background-secondary)", border: "0.5px solid var(--color-border-tertiary)", color: "var(--color-text-secondary)" }}>Week {week}</span>
             </div>
             <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 16 }}>Actuals only · Shared with investors</div>
 
             <SectionLabel text="App growth & retention" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
-              {gameKpis.slice(0, 6).map((k, i) => <KpiCard key={i} {...k} />)}
+              {gameInputRows.slice(0, 9).map((row, i) => (
+                <KpiCard key={i} label={row.kpi} value={gameValues[i] || "-"} />
+              ))}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
               <ChartCard title="Retention curve">
                 <ResponsiveContainer width="100%" height={150}>
-                  <BarChart data={retentionData}>
+                  <BarChart data={[
+                    { day: "D1", rate: Number(gameValues[4]) || 0 },
+                    { day: "D7", rate: Number(gameValues[5]) || 0 },
+                    { day: "D30", rate: Number(gameValues[6]) || 0 },
+                  ]}>
                     <XAxis dataKey="day" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis hide domain={[0, 100]} />
                     <Tooltip formatter={v => `${v}%`} />
@@ -325,13 +352,16 @@ export default function App() {
               </ChartCard>
               <ChartCard title="Gender split">
                 <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 4 }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: "#378ADD", display: "inline-block" }}></span>Male 58%</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: "#D4537E", display: "inline-block" }}></span>Female 42%</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: "#378ADD", display: "inline-block" }}></span>Male {gameValues[24] || "-"}%</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: "#D4537E", display: "inline-block" }}></span>Female {gameValues[25] || "-"}%</span>
                 </div>
                 <ResponsiveContainer width="100%" height={150}>
                   <PieChart>
-                    <Pie data={genderData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value">
-                      {genderData.map((_, i) => <Cell key={i} fill={GENDER_COLORS[i]} />)}
+                    <Pie data={[
+                      { name: "Male", value: Number(gameValues[24]) || 0 },
+                      { name: "Female", value: Number(gameValues[25]) || 0 },
+                    ]} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value">
+                      {GENDER_COLORS.map((color, i) => <Cell key={i} fill={color} />)}
                     </Pie>
                     <Tooltip formatter={v => `${v}%`} />
                   </PieChart>
@@ -341,13 +371,20 @@ export default function App() {
 
             <SectionLabel text="Monetisation & paid" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
-              {gameKpis.slice(6).map((k, i) => <KpiCard key={i} {...k} />)}
+              {gameInputRows.slice(9, 18).map((row, i) => (
+                <KpiCard key={i + 9} label={row.kpi} value={gameValues[i + 9] || "-"} />
+              ))}
             </div>
 
             <SectionLabel text="Social media growth" />
             <ChartCard title="New followers by platform">
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={socialData} barSize={36}>
+                <BarChart data={[
+                  { platform: "Instagram", followers: Number(gameValues[18]) || 0 },
+                  { platform: "TikTok", followers: Number(gameValues[19]) || 0 },
+                  { platform: "YouTube", followers: Number(gameValues[20]) || 0 },
+                  { platform: "Snapchat", followers: Number(gameValues[21]) || 0 },
+                ]} barSize={36}>
                   <XAxis dataKey="platform" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip />
@@ -355,6 +392,13 @@ export default function App() {
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
+
+            <SectionLabel text="Demographics" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginTop: 16 }}>
+              {gameInputRows.slice(24).map((row, i) => (
+                <KpiCard key={i + 24} label={row.kpi} value={gameValues[i + 24] || "-"} />
+              ))}
+            </div>
           </div>
         )}
 
@@ -365,7 +409,7 @@ export default function App() {
             <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 20 }}>
               Team enters actual values only. Dashboard auto-calculates.
             </div>
-            <InputSheet rows={finInputRows} week={week} setWeek={setWeek} />
+            <InputSheet rows={finInputRows} week={week} setWeek={setWeek} values={finValues} setValues={setFinValues} />
           </div>
         )}
 
@@ -376,7 +420,7 @@ export default function App() {
             <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 20 }}>
               Team enters actual values only. Dashboard auto-calculates.
             </div>
-            <InputSheet rows={gameInputRows} week={week} setWeek={setWeek} />
+            <InputSheet rows={gameInputRows} week={week} setWeek={setWeek} values={gameValues} setValues={setGameValues} />
           </div>
         )}
 
