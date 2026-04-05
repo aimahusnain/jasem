@@ -376,7 +376,7 @@ export default function App() {
                   ]} layout="vertical" barSize={16}>
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="stage" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={65} />
-                    <Tooltip formatter={(v: number) => v.toLocaleString()} />
+                    <Tooltip formatter={(v: any) => v ? Number(v).toLocaleString() : "0"} />
                     <Bar dataKey="value" fill="#1D9E75" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -389,7 +389,7 @@ export default function App() {
                   ]} barSize={40}>
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis hide />
-                    <Tooltip formatter={(v: number) => v.toLocaleString()} />
+                    <Tooltip formatter={(v: any) => v ? Number(v).toLocaleString() : "0"} />
                     <Bar dataKey="v" fill="#378ADD" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -431,7 +431,7 @@ export default function App() {
                   ]}>
                     <XAxis dataKey="day" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis hide domain={[0, 100]} />
-                    <Tooltip formatter={v => `${v}%`} />
+                    <Tooltip formatter={(v: any) => `${v || 0}%`} />
                     <Bar dataKey="rate" fill="#7F77DD" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -449,7 +449,7 @@ export default function App() {
                     ]} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value">
                       {GENDER_COLORS.map((color, i) => <Cell key={i} fill={color} />)}
                     </Pie>
-                    <Tooltip formatter={v => `${v}%`} />
+                    <Tooltip formatter={(v: any) => `${v || 0}%`} />
                   </PieChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -473,7 +473,7 @@ export default function App() {
                 ]} barSize={36}>
                   <XAxis dataKey="platform" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
-                  <Tooltip formatter={(v: number) => v.toLocaleString()} />
+                  <Tooltip formatter={(v: any) => v ? Number(v).toLocaleString() : "0"} />
                   <Bar dataKey="followers" fill="#D4537E" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
