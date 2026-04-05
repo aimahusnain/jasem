@@ -131,6 +131,7 @@ const GENDER_COLORS = ["#378ADD", "#D4537E"];
 interface KpiCardProps {
   label: string;
   value: string;
+  unit?: string;
 }
 
 interface SectionLabelProps {
@@ -151,11 +152,45 @@ interface InputSheetProps {
 }
 
 // ── SHARED COMPONENTS ─────────────────────────────────────────────────
-function KpiCard({ label, value }: KpiCardProps) {
+function KpiCard({ label, value, unit }: KpiCardProps) {
+  const formatValue = (val: string, unit?: string) => {
+    if (!val || val === "-") return "-";
+
+    const numVal = parseFloat(val);
+
+    // Handle percentage
+    if (unit === "%") {
+      return `${val}%`;
+    }
+
+    // Handle currency (AED)
+    if (unit === "AED") {
+      return `AED ${Number(val).toLocaleString()}`;
+    }
+
+    // Handle ratings
+    if (unit === "/ 5") {
+      return `${val} / 5`;
+    }
+
+    // Handle multipliers
+    if (unit === "x") {
+      return `${val}x`;
+    }
+
+    // Handle large numbers with commas
+    if (["units", "count", "users", "views", "followers"].includes(unit || "")) {
+      return Number(val).toLocaleString();
+    }
+
+    // Default: just return the value
+    return val;
+  };
+
   return (
     <div style={{ background: "var(--color-background-secondary)", borderRadius: 10, padding: "12px 14px" }}>
       <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 500 }}>{value}</div>
+      <div style={{ fontSize: 20, fontWeight: 500 }}>{formatValue(value, unit)}</div>
     </div>
   );
 }
@@ -234,8 +269,59 @@ function InputSheet({ rows, week, setWeek, values, setValues }: InputSheetProps)
 export default function App() {
   const [tab, setTab] = useState(0);
   const [week, setWeek] = useState(5);
-  const [finValues, setFinValues] = useState<Record<number, string>>({});
-  const [gameValues, setGameValues] = useState<Record<number, string>>({});
+
+  // Default values for Financial KPIs
+  const defaultFinValues: Record<number, string> = {
+    0: "1240",   // Deera Units Sold
+    1: "870",    // Mushakhat Units Sold
+    2: "320",    // Avg Order Value (AOV)
+    3: "28",     // Repeat Purchase Rate
+    4: "148200", // B2B Revenue Generated
+    5: "18",     // B2B Meetings Booked
+    6: "12",     // B2B Proposals Sent
+    7: "7",      // B2B Contracts Signed
+    8: "390000", // Est. Pipeline Value
+    9: "4",      // Diwan Jaming Episodes Published
+    10: "62400", // YouTube Monthly Total Views
+    11: "18300", // Instagram Reels Avg Views per Reel
+    12: "34100", // TikTok Avg Views per Video
+    13: "38",    // Content Output – Total Pieces Published
+  };
+
+  // Default values for Games KPIs
+  const defaultGameValues: Record<number, string> = {
+    0: "84500",    // Cumulative Downloads
+    1: "3200",     // DAU
+    2: "21400",    // MAU
+    3: "14.9",     // Stickiness Ratio
+    4: "62",       // D1 Retention Rate
+    5: "38",       // D7 Retention Rate
+    6: "21",       // D30 Retention Rate
+    7: "8.5",      // Avg Session Length
+    8: "4.6",      // App Store Rating
+    9: "12.4",     // ARPU
+    10: "88",      // LTV
+    11: "8.2",     // CAC
+    12: "3.20",    // CPI
+    13: "22000",   // Total Ad Spend
+    14: "3.8",     // ROAS
+    15: "6.80",    // CAC Blended
+    16: "15.20",   // CPM
+    17: "4.2",     // CTR
+    18: "1200",    // Instagram New Followers
+    19: "2100",    // TikTok New Followers
+    20: "450",     // YouTube New Subscribers
+    21: "680",     // Snapchat Story Views
+    22: "8.5",     // Snapchat Swipe-Up Rate
+    23: "3750",    // Total New Followers
+    24: "6.2",     // Avg Engagement Rate
+    25: "125000",  // Influencer Total Impressions
+    26: "58",      // Gender – Male
+    27: "42",      // Gender – Female
+  };
+
+  const [finValues, setFinValues] = useState<Record<number, string>>(defaultFinValues);
+  const [gameValues, setGameValues] = useState<Record<number, string>>(defaultGameValues);
 
   return (
     <div style={{ fontFamily: "var(--font-sans)", color: "var(--color-text-primary)", paddingBottom: "2rem" }}>
@@ -268,14 +354,14 @@ export default function App() {
             <SectionLabel text="Sales" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 8 }}>
               {finInputRows.slice(0, 4).map((row, i) => (
-                <KpiCard key={i} label={row.kpi} value={finValues[i] || "-"} />
+                <KpiCard key={i} label={row.kpi} value={finValues[i] || "-"} unit={row.unit} />
               ))}
             </div>
 
             <SectionLabel text="B2B" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 16 }}>
               {finInputRows.slice(4, 9).map((row, i) => (
-                <KpiCard key={i + 4} label={row.kpi} value={finValues[i + 4] || "-"} />
+                <KpiCard key={i + 4} label={row.kpi} value={finValues[i + 4] || "-"} unit={row.unit} />
               ))}
             </div>
 
@@ -290,7 +376,7 @@ export default function App() {
                   ]} layout="vertical" barSize={16}>
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="stage" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={65} />
-                    <Tooltip />
+                    <Tooltip formatter={(v: number) => v.toLocaleString()} />
                     <Bar dataKey="value" fill="#1D9E75" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -303,7 +389,7 @@ export default function App() {
                   ]} barSize={40}>
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                     <YAxis hide />
-                    <Tooltip />
+                    <Tooltip formatter={(v: number) => v.toLocaleString()} />
                     <Bar dataKey="v" fill="#378ADD" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -313,7 +399,7 @@ export default function App() {
             <SectionLabel text="Content" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
               {finInputRows.slice(9).map((row, i) => (
-                <KpiCard key={i + 9} label={row.kpi} value={finValues[i + 9] || "-"} />
+                <KpiCard key={i + 9} label={row.kpi} value={finValues[i + 9] || "-"} unit={row.unit} />
               ))}
             </div>
           </div>
@@ -331,7 +417,7 @@ export default function App() {
             <SectionLabel text="App growth & retention" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
               {gameInputRows.slice(0, 9).map((row, i) => (
-                <KpiCard key={i} label={row.kpi} value={gameValues[i] || "-"} />
+                <KpiCard key={i} label={row.kpi} value={gameValues[i] || "-"} unit={row.unit} />
               ))}
             </div>
 
@@ -352,14 +438,14 @@ export default function App() {
               </ChartCard>
               <ChartCard title="Gender split">
                 <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 4 }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: "#378ADD", display: "inline-block" }}></span>Male {gameValues[24] || "-"}%</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: "#D4537E", display: "inline-block" }}></span>Female {gameValues[25] || "-"}%</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: "#378ADD", display: "inline-block" }}></span>Male {gameValues[26] || "-"}%</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: "#D4537E", display: "inline-block" }}></span>Female {gameValues[27] || "-"}%</span>
                 </div>
                 <ResponsiveContainer width="100%" height={150}>
                   <PieChart>
                     <Pie data={[
-                      { name: "Male", value: Number(gameValues[24]) || 0 },
-                      { name: "Female", value: Number(gameValues[25]) || 0 },
+                      { name: "Male", value: Number(gameValues[26]) || 0 },
+                      { name: "Female", value: Number(gameValues[27]) || 0 },
                     ]} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value">
                       {GENDER_COLORS.map((color, i) => <Cell key={i} fill={color} />)}
                     </Pie>
@@ -372,7 +458,7 @@ export default function App() {
             <SectionLabel text="Monetisation & paid" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
               {gameInputRows.slice(9, 18).map((row, i) => (
-                <KpiCard key={i + 9} label={row.kpi} value={gameValues[i + 9] || "-"} />
+                <KpiCard key={i + 9} label={row.kpi} value={gameValues[i + 9] || "-"} unit={row.unit} />
               ))}
             </div>
 
@@ -387,7 +473,7 @@ export default function App() {
                 ]} barSize={36}>
                   <XAxis dataKey="platform" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis hide />
-                  <Tooltip />
+                  <Tooltip formatter={(v: number) => v.toLocaleString()} />
                   <Bar dataKey="followers" fill="#D4537E" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -396,7 +482,7 @@ export default function App() {
             <SectionLabel text="Demographics" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginTop: 16 }}>
               {gameInputRows.slice(24).map((row, i) => (
-                <KpiCard key={i + 24} label={row.kpi} value={gameValues[i + 24] || "-"} />
+                <KpiCard key={i + 24} label={row.kpi} value={gameValues[i + 24] || "-"} unit={row.unit} />
               ))}
             </div>
           </div>
